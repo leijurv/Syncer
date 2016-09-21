@@ -47,7 +47,7 @@ public class Syncer {
             return;
         }
 
-        //InputStream in = new Socket("localhost", 5021).getInputStream();
+        //InputStream in = new Socket("207.47.5.28", 5021).getInputStream();
         InputStream in = new ProcessBuilder("ssh", "b", "tail -c 0 -f /tmp/soundout/output.wav").start().getInputStream();
         boolean verbose = args.length > 0 && args[0].equals("verbose");
         DataInputStream wav = new DataInputStream(in);
