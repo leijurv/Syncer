@@ -143,15 +143,16 @@ public class Syncer {
                         beginning = beginning.next;
                     }
                     if (seconds > 2) {
-                        beginning = null;
+                        //beginning = null;
+                    }
+                    if (System.currentTimeMillis() - startAbove > 20000) {
+                        System.exit(1);
                     }
                 }
                 if (verbose) {
                     System.out.println(temp);
                 }
-                if (seconds > 20) {
-                    System.exit(1);
-                }
+
             }
             Thread.sleep(50);
         }
