@@ -202,7 +202,11 @@ public class Syncer {
                     int startX = block;
                     int startY = M.getHeight() - 120;
                     int sizeY = (int) (sum * 10);
-                    g.drawRect(startX, startY - sizeY, blocksize, sizeY);
+                    if (sizeY < 0) {
+                        g.drawRect(startX, startY, blocksize, -sizeY);
+                    } else {
+                        g.drawRect(startX, startY - sizeY, blocksize, sizeY);
+                    }
 
                 }
 
