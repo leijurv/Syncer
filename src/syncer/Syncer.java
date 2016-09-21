@@ -30,7 +30,7 @@ import javax.swing.WindowConstants;
  */
 public class Syncer {
 
-    static final int SIZE = 8192;
+    static final int SIZE = 16384;
     static final int BYTES_PER_SEC = 44100 * 4;
     static boolean dofft = true;
 
