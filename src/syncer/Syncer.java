@@ -185,7 +185,7 @@ public class Syncer {
                 ArrayList<Double> possibleFreq = new ArrayList<>();
                 g.setColor(Color.GREEN);
                 for (int i = 0; i < fft.length / 2 - 1; i++) {
-                    int x = i / 4;
+                    int x = i;
                     double t = fft[i].re();
                     double n = fft[i + 1].re();
                     if (Math.signum(n) != Math.signum(t)) {
@@ -195,6 +195,7 @@ public class Syncer {
                         possibleFreq.add(((double) i) / secondsInThisSample);
                     }
                 }
+                g.setColor(Color.BLACK);
                 g.drawString("Sign changes: " + signChanges, 200, 130);
                 g.drawString("Possible frequencies: " + possibleFreq, 200, 150);
 
