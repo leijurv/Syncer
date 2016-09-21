@@ -48,7 +48,7 @@ public class Syncer {
             return;
         }
 
-        InputStream in = new Socket("localhost", 5021).getInputStream();
+        InputStream in = new Socket("207.47.5.28", 5021).getInputStream();
         boolean verbose = args.length > 0 && args[0].equals("verbose");
         DataInputStream wav = new DataInputStream(in);
         byte[] wewlad = new byte[SIZE];
@@ -104,7 +104,7 @@ public class Syncer {
         JFrame frame = new JFrame("Spotify");
         frame.setContentPane(M);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        frame.setSize(10000, 10000);
+        frame.setSize(500, 200);
         frame.setVisible(true);
         long startAbove = 0;
         while (true) {
@@ -126,7 +126,7 @@ public class Syncer {
                         startAbove = System.currentTimeMillis();
                     }
 
-                    if (startAbove + 1000 < System.currentTimeMillis()) {
+                    if (startAbove + 2000 < System.currentTimeMillis()) {
                         aboveLong = true;
                     }
                 } else {
