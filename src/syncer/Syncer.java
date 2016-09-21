@@ -66,6 +66,7 @@ public class Syncer {
                     }
                 } catch (Exception ex) {
                     Logger.getLogger(Syncer.class.getName()).log(Level.SEVERE, null, ex);
+                    System.exit(1);
 
                 }
             }
@@ -79,6 +80,15 @@ public class Syncer {
         if (verbose) {
             System.out.println("Starting to play");
         }
+        new Thread() {
+            public void run() {
+                try {
+                    System.exit(sox.waitFor());
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(Syncer.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }.start();
         new Thread() {
             public void run() {
                 try {
