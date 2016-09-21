@@ -164,10 +164,23 @@ public class Syncer {
                     } else {
                         //g.setColor(Color.ORANGE);
                     }
-                    int y = (int) (-fft[i].re() * 100 + M.getHeight() - 120);
+                    int y = (int) (-fft[i].re() * 10 + M.getHeight() - 120);
                     //int othery = (int) (fft[i].re() * 100 + M.getHeight() - 120);
                     //g.drawLine(x, y, x, othery);
                     g.drawLine(x, y, x, y);
+                }
+                int blocksize = 10;
+                for (int block = 0; block + blocksize < fft.length; block += blocksize) {
+                    double sum = 0;
+                    for (int i = block; i < block + blocksize; i++) {
+                        sum += Math.abs(fft[i].re());
+                    }
+                    sum /= blocksize;
+                    int startX = block;
+                    int startY = M.getHeight() - 120;
+                    int sizeY = (int) (sum * 10);
+                    g.drawRect(startX, startY - sizeY, blocksize, sizeY);
+
                 }
 
                 g.setColor(Color.BLUE);
