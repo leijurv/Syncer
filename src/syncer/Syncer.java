@@ -10,6 +10,7 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
@@ -47,8 +48,7 @@ public class Syncer {
             return;
         }
 
-        //InputStream in = new Socket("207.47.5.28", 5021).getInputStream();
-        InputStream in = new ProcessBuilder("ssh", "b", "tail -c 0 -f /tmp/soundout/output.wav").start().getInputStream();
+        InputStream in = new Socket("localhost", 5021).getInputStream();
         boolean verbose = args.length > 0 && args[0].equals("verbose");
         DataInputStream wav = new DataInputStream(in);
         byte[] wewlad = new byte[SIZE];
@@ -138,7 +138,7 @@ public class Syncer {
                 info = temp;
                 M.repaint();
                 if (aboveLong) {
-                    int target = (int) Math.floor(Math.max(0, size * 0.95F));
+                    int target = (int) Math.floor(Math.max(0, size * 0.98F));
                     while (getSize() > target) {
                         beginning = beginning.next;
                     }
