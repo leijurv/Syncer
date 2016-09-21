@@ -30,6 +30,7 @@ public class Syncer {
 
     static final int SIZE = 16384;
     static final int BYTES_PER_SEC = 44100 * 4;
+    static final boolean dofft = true;
 
     /**
      * @param args the command line arguments
@@ -123,13 +124,19 @@ public class Syncer {
                             }
                         }
                         data = n;*/
-                        Complex[] input = new Complex[data.length];
-                        for (int i = 0; i < input.length; i++) {
-                            input[i] = new Complex(data[i], 0);
+                        if (dofft) {
+                            Complex[] input = new Complex[data.length];
+                            for (int i = 0; i < input.length; i++) {
+                                input[i] = new Complex(data[i], 0);
+                            }
+                            fft = FFT.fft(input);
                         }
-                        fft = FFT.fft(input);
                         mostRecentSample = data;
+                        if (M != null) {
+                            M.repaint();
+                        }
                         System.out.println(System.currentTimeMillis() - start);
+
                         sox.getOutputStream().flush();
                         //System.out.println("wew");
                     }
@@ -154,6 +161,9 @@ public class Syncer {
                     int x = i / 4;
                     int y = (int) (bleh[i] * 100 + 300);
                     g.drawLine(x, y, x, y);
+                }
+                if (fft == null) {
+                    return;
                 }
                 g.setColor(Color.RED);
                 for (int i = 0; i < fft.length; i++) {
@@ -182,8 +192,20 @@ public class Syncer {
                     g.drawRect(startX, startY - sizeY, blocksize, sizeY);
 
                 }
-
                 g.setColor(Color.BLUE);
+                for (int block = 0; block + blocksize < fft.length; block += blocksize) {
+                    double sum = 0;
+                    for (int i = block; i < block + blocksize; i++) {
+                        sum += fft[i].re();
+                    }
+                    sum /= blocksize;
+                    int startX = block;
+                    int startY = M.getHeight() - 120;
+                    int sizeY = (int) (sum * 10);
+                    g.drawRect(startX, startY - sizeY, blocksize, sizeY);
+
+                }
+
                 for (int i = 0; i < fft.length; i++) {
                     int x = i / 4;
                     int y = (int) (fft[i].im() * 100 + 400);
