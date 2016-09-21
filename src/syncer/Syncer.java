@@ -162,7 +162,7 @@ public class Syncer {
                     if (fft[i].re() > 0) {
                         g.setColor(Color.RED);
                     } else {
-                        g.setColor(Color.ORANGE);
+                        //g.setColor(Color.ORANGE);
                     }
                     int y = (int) (-fft[i].re() * 100 + M.getHeight() - 120);
                     g.drawLine(x, y, x, y);
