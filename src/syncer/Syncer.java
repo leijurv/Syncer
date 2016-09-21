@@ -149,22 +149,37 @@ public class Syncer {
                 if (bleh == null) {
                     return;
                 }
+                double secondsInThisSample = (((double) SIZE) / BYTES_PER_SEC);
                 for (int i = 0; i < bleh.length; i++) {
                     int x = i / 4;
-                    int y = (int) (bleh[i] * 100 + 400);
+                    int y = (int) (bleh[i] * 100 + 300);
                     g.drawLine(x, y, x, y);
                 }
                 g.setColor(Color.RED);
                 for (int i = 0; i < fft.length; i++) {
-                    int x = i / 4;
-                    int y = (int) (fft[i].re() * 100 + 400);
+                    int x = i;
+                    //int x = (int) (i / secondsInThisSample);
+                    if (fft[i].re() > 0) {
+                        g.setColor(Color.RED);
+                    } else {
+                        g.setColor(Color.ORANGE);
+                    }
+                    int y = (int) (-fft[i].re() * 100 + M.getHeight() - 120);
                     g.drawLine(x, y, x, y);
+                }
+                g.setColor(Color.BLACK);
+                g.drawLine(0, M.getHeight() - 120, M.getWidth(), M.getHeight() - 120);
+                for (int x = 0; x < M.getWidth(); x += 50) {
+                    int ind = x;
+                    double freq = ind / secondsInThisSample;
+                    int f = (int) freq;
+                    g.drawString(f + "", x, M.getHeight() - 5);
                 }
                 g.setColor(Color.BLUE);
                 for (int i = 0; i < fft.length; i++) {
                     int x = i / 4;
                     int y = (int) (fft[i].im() * 100 + 400);
-                    g.drawLine(x, y, x, y);
+                    //g.drawLine(x, y, x, y);
                 }
                 ArrayList<Integer> signChanges = new ArrayList<>();
                 ArrayList<Double> possibleFreq = new ArrayList<>();
@@ -174,14 +189,14 @@ public class Syncer {
                     double t = fft[i].re();
                     double n = fft[i + 1].re();
                     if (Math.signum(n) != Math.signum(t)) {
-                        g.drawLine(x, 0, x, M.getHeight());
+                        g.drawLine(x, M.getHeight() - 20, x, M.getHeight());
                         signChanges.add(i);
-                        double secondsInThisSample = (((double) SIZE) / BYTES_PER_SEC);
+
                         possibleFreq.add(((double) i) / secondsInThisSample);
                     }
                 }
-                g.drawString("Sign changes: " + signChanges, 200, 200);
-                g.drawString("Possible frequencies: " + possibleFreq, 200, 220);
+                g.drawString("Sign changes: " + signChanges, 200, 130);
+                g.drawString("Possible frequencies: " + possibleFreq, 200, 150);
 
                 /*double max = 0;
                 int pos = 0;
