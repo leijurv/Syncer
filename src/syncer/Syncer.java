@@ -167,14 +167,7 @@ public class Syncer {
                     int y = (int) (-fft[i].re() * 100 + M.getHeight() - 120);
                     g.drawLine(x, y, x, y);
                 }
-                g.setColor(Color.BLACK);
-                g.drawLine(0, M.getHeight() - 120, M.getWidth(), M.getHeight() - 120);
-                for (int x = 0; x < M.getWidth(); x += 50) {
-                    int ind = x;
-                    double freq = ind / secondsInThisSample;
-                    int f = (int) freq;
-                    g.drawString(f + "", x, M.getHeight() - 5);
-                }
+
                 g.setColor(Color.BLUE);
                 for (int i = 0; i < fft.length; i++) {
                     int x = i / 4;
@@ -198,7 +191,14 @@ public class Syncer {
                 g.setColor(Color.BLACK);
                 g.drawString("Sign changes: " + signChanges, 200, 130);
                 g.drawString("Possible frequencies: " + possibleFreq, 200, 150);
-
+                g.setColor(Color.BLACK);
+                g.drawLine(0, M.getHeight() - 120, M.getWidth(), M.getHeight() - 120);
+                for (int x = 0; x < M.getWidth(); x += 50) {
+                    int ind = x;
+                    double freq = ind / secondsInThisSample;
+                    int f = (int) freq;
+                    g.drawString(f + "", x, M.getHeight() - 5);
+                }
                 /*double max = 0;
                 int pos = 0;
                 for (int i = 0; i < fft.length / 2; i++) {
