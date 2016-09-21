@@ -11,6 +11,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.IntBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
@@ -23,7 +26,7 @@ import javax.swing.WindowConstants;
  */
 public class Syncer {
 
-    static final int SIZE = 1024;
+    static final int SIZE = 16384;
     static final int BYTES_PER_SEC = 44100 * 4;
 
     /**
@@ -93,7 +96,14 @@ public class Syncer {
             public void run() {
                 try {
                     while (true) {
-                        sox.getOutputStream().write(getBytes());
+                        byte[] toWrite = getBytes();
+                        sox.getOutputStream().write(toWrite);
+                        float[] data = new float[toWrite.length / 4];
+                        IntBuffer d = ByteBuffer.wrap(toWrite).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer();
+                        for (int i = 0; i < data.length; i++) {
+                            data[i] = ((float) d.get()) / Integer.MAX_VALUE;
+                        }
+                        mostRecentSample = data;
                         sox.getOutputStream().flush();
                         //System.out.println("wew");
                     }
@@ -109,12 +119,22 @@ public class Syncer {
                 for (int i = 0; i < lol.length; i++) {
                     g.drawString(lol[i], 10, 10 + i * 15);
                 }
+                float[] bleh = mostRecentSample;
+                if (bleh == null) {
+                    return;
+                }
+                for (int i = 0; i < bleh.length; i++) {
+                    int x = i;
+                    int y = (int) (bleh[i] * 100 + 400);
+                    g.drawLine(x, y, x, y);
+                }
             }
         };
         JFrame frame = new JFrame("Spotify");
         frame.setContentPane(M);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        frame.setSize(500, 200);
+        //frame.setSize(500, 200);
+        frame.setSize(10000, 10000);
         frame.setVisible(true);
         long startAbove = 0;
         while (true) {
@@ -167,6 +187,7 @@ public class Syncer {
             Thread.sleep(50);
         }
     }
+    static float[] mostRecentSample = null;
     static JComponent M;
     public static String info = "";
     static int waitMS = 0;
