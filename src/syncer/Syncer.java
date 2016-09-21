@@ -7,6 +7,8 @@ package syncer;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -28,9 +30,9 @@ import javax.swing.WindowConstants;
  */
 public class Syncer {
 
-    static final int SIZE = 16384;
+    static final int SIZE = 8192;
     static final int BYTES_PER_SEC = 44100 * 4;
-    static final boolean dofft = true;
+    static boolean dofft = true;
 
     /**
      * @param args the command line arguments
@@ -135,7 +137,7 @@ public class Syncer {
                         if (M != null) {
                             M.repaint();
                         }
-                        System.out.println(System.currentTimeMillis() - start);
+                        //System.out.println(System.currentTimeMillis() - start);
 
                         sox.getOutputStream().flush();
                         //System.out.println("wew");
@@ -148,6 +150,7 @@ public class Syncer {
         }.start();
         M = new JComponent() {
             public void paintComponent(Graphics g) {
+                g.drawString("Click to toggle FFT", 400, 50);
                 String[] lol = info.split("\n");
                 for (int i = 0; i < lol.length; i++) {
                     g.drawString(lol[i], 10, 10 + i * 15);
@@ -162,7 +165,7 @@ public class Syncer {
                     int y = (int) (bleh[i] * 100 + 300);
                     g.drawLine(x, y, x, y);
                 }
-                if (fft == null) {
+                if (fft == null || !dofft) {
                     return;
                 }
                 g.setColor(Color.RED);
@@ -257,6 +260,33 @@ public class Syncer {
         //frame.setSize(500, 200);
         frame.setSize(10000, 10000);
         frame.setVisible(true);
+        frame.addMouseListener(new MouseListener() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                dofft = !dofft;
+                //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+        });
         long startAbove = 0;
         while (true) {
             synchronized (lock) {
