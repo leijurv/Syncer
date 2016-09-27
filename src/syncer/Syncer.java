@@ -101,7 +101,10 @@ public class Syncer {
             public void run() {
                 try {
                     while (true) {
-                        byte[] toWrite = getBytes();
+                        byte[] toWrite = null;
+                        while (toWrite == null) {
+                            toWrite = getBytes();
+                        }
                         sox.getOutputStream().write(toWrite);
                         long start = System.currentTimeMillis();
                         float[] data = new float[toWrite.length / 4];
@@ -390,7 +393,7 @@ public class Syncer {
         }
         synchronized (lock) {
             if (beginning == null) {
-                return getBytes();
+                return null;
             }
             LinkedList temp = beginning;
             LinkedList prev = null;
