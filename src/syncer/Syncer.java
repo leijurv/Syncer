@@ -56,8 +56,14 @@ public class Syncer {
         new Thread() {
             public void run() {
                 try {
-                    System.exit(sox.waitFor());//this is a sketchy way to just make it exit once the sox subprocess stops
-                } catch (InterruptedException ex) {
+                    int exitCode = sox.waitFor();
+                    System.out.println("SOX EXITED WITH CODE " + exitCode);
+                    int j;
+                    while ((j = sox.getErrorStream().read()) >= 0) {
+                        System.out.write(j);
+                    }
+                    System.exit(exitCode);//this is a sketchy way to just make it exit once the sox subprocess stops
+                } catch (InterruptedException | IOException ex) {
                     Logger.getLogger(Syncer.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
