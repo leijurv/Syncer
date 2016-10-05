@@ -71,7 +71,7 @@ public class Syncer {
                             toWrite = cache.getBytes();
                         }
                         sox.getOutputStream().write(toWrite.contents);
-                        GUI.onData(toWrite.contents);
+                        GUI.onData(toWrite);
                         sox.getOutputStream().flush();
                         //System.out.println("wew");
                     }

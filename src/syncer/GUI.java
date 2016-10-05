@@ -201,6 +201,12 @@ public class GUI {
                 temp += ("ms since zero cache: " + (size > 1 ? (System.currentTimeMillis() - startAbove) : 0));
                 temp += "\n";
                 temp += ("Cutting: " + aboveLong);
+                temp += "\n";
+                temp += "Offset from multiplexed time: " + offset;
+                temp += "\n";
+                temp += "Offset betweed multiplex and receive: " + offset2;
+                temp += "\n";
+                temp += "Offset betweed multiplex and fully received: " + offset3;
                 info = temp;
                 M.repaint();
                 if (aboveLong) {
@@ -223,8 +229,16 @@ public class GUI {
             Thread.sleep(50);
         }
     }
+    static long offset;
+    static long offset2;
+    static long offset3;
 
-    public static void onData(byte[] toWrite) {
+    public static void onData(Chunk chunk) {
+        offset = System.currentTimeMillis() - chunk.multiplexed / 1000000;
+        offset2 = chunk.beganToReceive - chunk.multiplexed / 1000000;
+        offset3 = chunk.received - chunk.multiplexed / 1000000;
+
+        byte[] toWrite = chunk.contents;
         long start = System.currentTimeMillis();
         float[] data = new float[toWrite.length / 4];
         IntBuffer d = ByteBuffer.wrap(toWrite).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer();
