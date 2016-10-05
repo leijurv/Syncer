@@ -5,10 +5,6 @@
  */
 package syncer;
 
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -17,12 +13,9 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
-import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
-import javax.swing.JFrame;
-import javax.swing.WindowConstants;
 
 /**
  *
@@ -58,31 +51,8 @@ public class Syncer {
 
         InputStream in = new Socket("207.47.5.28", 5021).getInputStream();
         boolean verbose = args.length > 0 && args[0].equals("verbose");
-        DataInputStream wav = new DataInputStream(in);
-
-        new Thread() {
-            public void run() {
-
-                try {
-
-                    while (true) {
-                        System.out.println(wav.readLong());
-                        byte[] wewlad = new byte[SIZE];
-                        wav.readFully(wewlad);
-                        addBytes(wewlad);
-                    }
-                } catch (Exception ex) {
-                    Logger.getLogger(Syncer.class.getName()).log(Level.SEVERE, null, ex);
-                    System.exit(1);
-
-                }
-            }
-
-        }.start();
-        while (getSize() < 20) {
-            Thread.sleep(1);
-
-        }
+        new CacheSource(new DataInputStream(in), cache).start();
+        cache.sleepUntilSize(20);
         Process sox = new ProcessBuilder("/usr/local/bin/sox -t raw -r 44100 -b32 -e signed-integer - -tcoreaudio".split(" ")).start();
         if (verbose) {
             System.out.println("Starting to play");
@@ -90,7 +60,7 @@ public class Syncer {
         new Thread() {
             public void run() {
                 try {
-                    System.exit(sox.waitFor());
+                    System.exit(sox.waitFor());//this is a sketchy way to just make it exit once the sox subprocess stops
                 } catch (InterruptedException ex) {
                     Logger.getLogger(Syncer.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -100,12 +70,12 @@ public class Syncer {
             public void run() {
                 try {
                     while (true) {
-                        byte[] toWrite = null;
+                        Chunk toWrite = null;
                         while (toWrite == null) {
-                            toWrite = getBytes();
+                            toWrite = cache.getBytes();
                         }
-                        sox.getOutputStream().write(toWrite);
-                        onData(toWrite);
+                        sox.getOutputStream().write(toWrite.contents);
+                        onData(toWrite.contents);
                         sox.getOutputStream().flush();
                         //System.out.println("wew");
                     }
@@ -115,203 +85,14 @@ public class Syncer {
                 }
             }
         }.start();
-        M = new JComponent() {
-            public void paintComponent(Graphics g) {
-                g.drawString("Click to toggle FFT", 400, 50);
-                String[] lol = info.split("\n");
-                for (int i = 0; i < lol.length; i++) {
-                    g.drawString(lol[i], 10, 10 + i * 15);
-                }
-                float[] bleh = mostRecentSample;
-                if (bleh == null) {
-                    return;
-                }
-                double secondsInThisSample = (((double) SIZE) / BYTES_PER_SEC);
-                for (int i = 0; i < bleh.length; i++) {
-                    int x = i / 4;
-                    int y = (int) (bleh[i] * 100 + 300);
-                    g.drawLine(x, y, x, y);
-                }
-                if (fft == null || !dofft) {
-                    return;
-                }
-                g.setColor(Color.RED);
-                for (int i = 0; i < fft.length; i++) {
-                    int x = i;
-                    //int x = (int) (i / secondsInThisSample);
-                    if (fft[i].re() > 0) {
-                        g.setColor(Color.RED);
-                    } else {
-                        //g.setColor(Color.ORANGE);
-                    }
-                    int y = (int) (-fft[i].re() * 10 + M.getHeight() - 120);
-                    //int othery = (int) (fft[i].re() * 100 + M.getHeight() - 120);
-                    //g.drawLine(x, y, x, othery);
-                    g.drawLine(x, y, x, y);
-                }
-                int blocksize = 10;
-                for (int block = 0; block + blocksize < fft.length; block += blocksize) {
-                    double sum = 0;
-                    for (int i = block; i < block + blocksize; i++) {
-                        sum += Math.abs(fft[i].re());
-                    }
-                    sum /= blocksize;
-                    int startX = block;
-                    int startY = M.getHeight() - 120;
-                    int sizeY = (int) (sum * 10);
-                    g.drawRect(startX, startY - sizeY, blocksize, sizeY);
 
-                }
-                g.setColor(Color.BLUE);
-                for (int block = 0; block + blocksize < fft.length; block += blocksize) {
-                    double sum = 0;
-                    for (int i = block; i < block + blocksize; i++) {
-                        sum += fft[i].re();
-                    }
-                    sum /= blocksize;
-                    int startX = block;
-                    int startY = M.getHeight() - 120;
-                    int sizeY = (int) (sum * 10);
-                    if (sizeY < 0) {
-                        g.drawRect(startX, startY, blocksize, -sizeY);
-                    } else {
-                        g.drawRect(startX, startY - sizeY, blocksize, sizeY);
-                    }
-
-                }
-
-                for (int i = 0; i < fft.length; i++) {
-                    int x = i / 4;
-                    int y = (int) (fft[i].im() * 100 + 400);
-                    //g.drawLine(x, y, x, y);
-                }
-                ArrayList<Integer> signChanges = new ArrayList<>();
-                ArrayList<Double> possibleFreq = new ArrayList<>();
-                g.setColor(Color.GREEN);
-                for (int i = 0; i < fft.length / 2 - 1; i++) {
-                    int x = i;
-                    double t = fft[i].re();
-                    double n = fft[i + 1].re();
-                    if (Math.signum(n) != Math.signum(t)) {
-                        g.drawLine(x, M.getHeight() - 20, x, M.getHeight());
-                        signChanges.add(i);
-
-                        possibleFreq.add(((double) i) / secondsInThisSample);
-                    }
-                }
-                g.setColor(Color.BLACK);
-                g.drawString("Sign changes: " + signChanges, 200, 130);
-                g.drawString("Possible frequencies: " + possibleFreq, 200, 150);
-                g.setColor(Color.BLACK);
-                g.drawLine(0, M.getHeight() - 120, M.getWidth(), M.getHeight() - 120);
-                for (int x = 0; x < M.getWidth(); x += 50) {
-                    int ind = x;
-                    double freq = ind / secondsInThisSample;
-                    int f = (int) freq;
-                    g.drawString(f + "", x, M.getHeight() - 5);
-                }
-                /*double max = 0;
-                int pos = 0;
-                for (int i = 0; i < fft.length / 2; i++) {
-                    if (fft[i].re() > max) {
-                        max = fft[i].re();
-                        pos = i / 4;
-                    }
-                }*/
-                //g.drawString(fft.length + " " + pos + " " + max + "", 100, 100);
-            }
-        };
-        JFrame frame = new JFrame("Spotify");
-        frame.setContentPane(M);
-        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        //frame.setSize(500, 200);
-        frame.setSize(10000, 10000);
-        frame.setVisible(true);
-        frame.addMouseListener(new MouseListener() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                dofft = !dofft;
-                //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-            }
-        });
-        long startAbove = 0;
-        while (true) {
-            synchronized (lock) {
-                int size = getSize();
-                String temp = "";
-                temp += ("Number of seconds output thread spent waiting for data: " + waitMS / 1000F);
-                temp += "\n";
-                waitMS = 0;
-                temp += ("Cache size: " + size);
-                temp += "\n";
-                float seconds = (size * SIZE) / ((float) BYTES_PER_SEC);
-
-                temp += ("Number of seconds currently in cache: " + seconds);
-                temp += "\n";
-                boolean aboveLong = false;
-                if (size > 1) {
-                    if (startAbove == 0) {
-                        startAbove = System.currentTimeMillis();
-                    }
-
-                    if (startAbove + 2000 < System.currentTimeMillis()) {
-                        aboveLong = true;
-                    }
-                } else {
-                    startAbove = 0;
-                }
-                temp += ("ms since zero cache: " + (size > 1 ? (System.currentTimeMillis() - startAbove) : 0));
-                temp += "\n";
-                temp += ("Cutting: " + aboveLong);
-                info = temp;
-                M.repaint();
-                if (aboveLong) {
-                    int target = (int) Math.floor(Math.max(0, size * 0.98F));
-                    while (getSize() > target) {
-                        beginning = beginning.next;
-                    }
-                    if (seconds > 2) {
-                        //beginning = null;
-                    }
-                    if (System.currentTimeMillis() - startAbove > 20000) {
-                        System.exit(1);
-                    }
-                }
-                if (verbose) {
-                    System.out.println(temp);
-                }
-
-            }
-            Thread.sleep(50);
-        }
+        GUI.begin();
     }
     static float[] mostRecentSample = null;
     static Complex[] fft = null;
     static JComponent M;
     public static String info = "";
-    static int waitMS = 0;
-    public static final Object lock = new Object();
-    static LinkedList beginning = null;
+    static AudioCache cache = new AudioCache();
 
     public static void onData(byte[] toWrite) {
         long start = System.currentTimeMillis();
@@ -351,71 +132,4 @@ public class Syncer {
         //System.out.println(System.currentTimeMillis() - start);
     }
 
-    public static int getSize() {
-        synchronized (lock) {
-            if (beginning == null) {
-                return 0;
-            }
-            int count = 0;
-            LinkedList temp = beginning;
-            while (temp != null) {
-                temp = temp.next;
-                count++;
-            }
-            return count;
-        }
-    }
-
-    public static void addBytes(byte[] bytes) {
-        synchronized (lock) {
-            if (beginning == null) {
-                beginning = new LinkedList();
-                beginning.data = bytes;
-                //System.out.println("beginning add");
-                return;
-            }
-            //System.out.println("normal add");
-            LinkedList wew = new LinkedList();
-            wew.next = beginning;
-            wew.data = bytes;
-            beginning = wew;
-        }
-    }
-
-    public static byte[] getBytes() {
-        //System.out.println("Getting bytes");
-        while (beginning == null) {
-            waitMS++;
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(Syncer.class.getName()).log(Level.SEVERE, null, ex);
-                return null;
-            }
-        }
-        synchronized (lock) {
-            if (beginning == null) {
-                return null;
-            }
-            LinkedList temp = beginning;
-            LinkedList prev = null;
-            while (temp.next != null) {
-                prev = temp;
-                temp = temp.next;
-            }
-            byte[] toReturn = temp.data;
-            if (prev == null) {
-                beginning = null;
-                return toReturn;
-            }
-            prev.next = null;
-            return toReturn;
-        }
-    }
-
-    public static class LinkedList {
-
-        LinkedList next;
-        byte[] data;
-    }
 }
