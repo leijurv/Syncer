@@ -30,9 +30,9 @@ import javax.swing.WindowConstants;
  */
 public class Syncer {
 
-    static final int SIZE = 16384;
+    static final int SIZE = 4096;
     static final int BYTES_PER_SEC = 44100 * 4;
-    static boolean dofft = true;
+    static boolean dofft = false;
 
     /**
      * @param args the command line arguments
@@ -59,15 +59,14 @@ public class Syncer {
         InputStream in = new Socket("207.47.5.28", 5021).getInputStream();
         boolean verbose = args.length > 0 && args[0].equals("verbose");
         DataInputStream wav = new DataInputStream(in);
-        byte[] wewlad = new byte[SIZE];
-        wav.readFully(wewlad);
-        addBytes(wewlad);
+
         new Thread() {
             public void run() {
 
                 try {
 
                     while (true) {
+                        System.out.println(wav.readLong());
                         byte[] wewlad = new byte[SIZE];
                         wav.readFully(wewlad);
                         addBytes(wewlad);
@@ -106,42 +105,7 @@ public class Syncer {
                             toWrite = getBytes();
                         }
                         sox.getOutputStream().write(toWrite);
-                        long start = System.currentTimeMillis();
-                        float[] data = new float[toWrite.length / 4];
-                        IntBuffer d = ByteBuffer.wrap(toWrite).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer();
-                        for (int i = 0; i < data.length; i++) {
-                            data[i] = ((float) d.get()) / Integer.MAX_VALUE;
-                        }
-                        /* float minValue = data[0];
-                        int minPos = 0;
-                        for (int i = 1; i < data.length; i++) {
-                            if (data[i] < minValue) {
-                                minValue = data[i];
-                                minPos = i;
-                            }
-                        }
-                        float[] n = new float[data.length];
-                        for (int i = 0; i < data.length; i++) {
-                            if (i < minPos) {
-                                n[i - minPos + n.length] = data[i];
-                            } else {
-                                n[i - minPos] = data[i];
-                            }
-                        }
-                        data = n;*/
-                        if (dofft) {
-                            Complex[] input = new Complex[data.length];
-                            for (int i = 0; i < input.length; i++) {
-                                input[i] = new Complex(data[i], 0);
-                            }
-                            fft = FFT.fft(input);
-                        }
-                        mostRecentSample = data;
-                        if (M != null) {
-                            M.repaint();
-                        }
-                        //System.out.println(System.currentTimeMillis() - start);
-
+                        onData(toWrite);
                         sox.getOutputStream().flush();
                         //System.out.println("wew");
                     }
@@ -348,6 +312,44 @@ public class Syncer {
     static int waitMS = 0;
     public static final Object lock = new Object();
     static LinkedList beginning = null;
+
+    public static void onData(byte[] toWrite) {
+        long start = System.currentTimeMillis();
+        float[] data = new float[toWrite.length / 4];
+        IntBuffer d = ByteBuffer.wrap(toWrite).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer();
+        for (int i = 0; i < data.length; i++) {
+            data[i] = ((float) d.get()) / Integer.MAX_VALUE;
+        }
+        /* float minValue = data[0];
+                        int minPos = 0;
+                        for (int i = 1; i < data.length; i++) {
+                            if (data[i] < minValue) {
+                                minValue = data[i];
+                                minPos = i;
+                            }
+                        }
+                        float[] n = new float[data.length];
+                        for (int i = 0; i < data.length; i++) {
+                            if (i < minPos) {
+                                n[i - minPos + n.length] = data[i];
+                            } else {
+                                n[i - minPos] = data[i];
+                            }
+                        }
+                        data = n;*/
+        if (dofft) {
+            Complex[] input = new Complex[data.length];
+            for (int i = 0; i < input.length; i++) {
+                input[i] = new Complex(data[i], 0);
+            }
+            fft = FFT.fft(input);
+        }
+        mostRecentSample = data;
+        if (M != null) {
+            M.repaint();
+        }
+        //System.out.println(System.currentTimeMillis() - start);
+    }
 
     public static int getSize() {
         synchronized (lock) {
