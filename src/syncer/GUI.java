@@ -48,7 +48,7 @@ public class GUI {
                 for (int i = 0; i < bleh.length; i++) {
                     int x = i / 4;
                     int y = (int) (bleh[i] * 100 + 300);
-                    g.drawLine(x, y, x, y);
+                    g.drawRect(x, y, 0, 0);
                 }
                 if (fft == null || !dofft) {
                     return;
