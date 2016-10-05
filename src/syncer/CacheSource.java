@@ -34,8 +34,16 @@ public class CacheSource extends Thread {
                 cache.addBytes(chunk);
             }
         } catch (Exception ex) {
-            Logger.getLogger(Syncer.class.getName()).log(Level.SEVERE, null, ex);
-            System.exit(1);
+            try {
+                Logger.getLogger(Syncer.class.getName()).log(Level.SEVERE, null, ex);
+                Thread.sleep(1000);
+                System.out.println("LOL RIP");
+                Thread.sleep(1000);
+                System.exit(1);
+            } catch (InterruptedException ex1) {
+                Logger.getLogger(CacheSource.class.getName()).log(Level.SEVERE, null, ex1);
+
+            }
 
         }
     }
