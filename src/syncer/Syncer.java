@@ -21,7 +21,6 @@ public class Syncer {
 
     static final int SIZE = 4096;
     static final int BYTES_PER_SEC = 44100 * 4;
-    static boolean dofft = false;
 
     /**
      * @param args the command line arguments
@@ -62,6 +61,7 @@ public class Syncer {
                     while ((j = sox.getErrorStream().read()) >= 0) {
                         System.out.write(j);
                     }
+                    Thread.sleep(1000);
                     System.exit(exitCode);//this is a sketchy way to just make it exit once the sox subprocess stops
                 } catch (InterruptedException | IOException ex) {
                     Logger.getLogger(Syncer.class.getName()).log(Level.SEVERE, null, ex);

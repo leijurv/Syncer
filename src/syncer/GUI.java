@@ -19,7 +19,6 @@ import javax.swing.WindowConstants;
 import static syncer.Syncer.BYTES_PER_SEC;
 import static syncer.Syncer.SIZE;
 import static syncer.Syncer.cache;
-import static syncer.Syncer.dofft;
 
 /**
  *
@@ -31,6 +30,7 @@ public class GUI {
     static Complex[] fft = null;
     static JComponent M;
     public static String info = "";
+    static boolean dofft = false;
 
     public static void begin() throws InterruptedException {
         M = new JComponent() {
@@ -211,9 +211,9 @@ public class GUI {
                 M.repaint();
                 if (aboveLong) {
                     int target = (int) Math.floor(Math.max(0, size * 0.98F));
-                    /*while (getSize() > target) {
-                        beginning = beginning.next;
-                    }*/
+                    while (Syncer.cache.getSize() > target) {
+                        Syncer.cache.beginning = Syncer.cache.beginning.next;
+                    }
                     if (seconds > 2) {
                         //beginning = null;
                     }
