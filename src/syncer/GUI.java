@@ -9,24 +9,28 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 import static syncer.Syncer.BYTES_PER_SEC;
-import static syncer.Syncer.M;
 import static syncer.Syncer.SIZE;
 import static syncer.Syncer.cache;
 import static syncer.Syncer.dofft;
-import static syncer.Syncer.fft;
-import static syncer.Syncer.info;
-import static syncer.Syncer.mostRecentSample;
 
 /**
  *
  * @author leijurv
  */
 public class GUI {
+
+    static float[] mostRecentSample = null;
+    static Complex[] fft = null;
+    static JComponent M;
+    public static String info = "";
 
     public static void begin() throws InterruptedException {
         M = new JComponent() {
@@ -218,5 +222,43 @@ public class GUI {
             }
             Thread.sleep(50);
         }
+    }
+
+    public static void onData(byte[] toWrite) {
+        long start = System.currentTimeMillis();
+        float[] data = new float[toWrite.length / 4];
+        IntBuffer d = ByteBuffer.wrap(toWrite).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer();
+        for (int i = 0; i < data.length; i++) {
+            data[i] = ((float) d.get()) / Integer.MAX_VALUE;
+        }
+        /* float minValue = data[0];
+                        int minPos = 0;
+                        for (int i = 1; i < data.length; i++) {
+                            if (data[i] < minValue) {
+                                minValue = data[i];
+                                minPos = i;
+                            }
+                        }
+                        float[] n = new float[data.length];
+                        for (int i = 0; i < data.length; i++) {
+                            if (i < minPos) {
+                                n[i - minPos + n.length] = data[i];
+                            } else {
+                                n[i - minPos] = data[i];
+                            }
+                        }
+                        data = n;*/
+        if (dofft) {
+            Complex[] input = new Complex[data.length];
+            for (int i = 0; i < input.length; i++) {
+                input[i] = new Complex(data[i], 0);
+            }
+            fft = FFT.fft(input);
+        }
+        mostRecentSample = data;
+        if (M != null) {
+            M.repaint();
+        }
+        //System.out.println(System.currentTimeMillis() - start);
     }
 }

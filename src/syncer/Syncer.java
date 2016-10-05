@@ -10,12 +10,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.IntBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JComponent;
 
 /**
  *
@@ -75,7 +71,7 @@ public class Syncer {
                             toWrite = cache.getBytes();
                         }
                         sox.getOutputStream().write(toWrite.contents);
-                        onData(toWrite.contents);
+                        GUI.onData(toWrite.contents);
                         sox.getOutputStream().flush();
                         //System.out.println("wew");
                     }
@@ -88,48 +84,7 @@ public class Syncer {
 
         GUI.begin();
     }
-    static float[] mostRecentSample = null;
-    static Complex[] fft = null;
-    static JComponent M;
-    public static String info = "";
-    static AudioCache cache = new AudioCache();
 
-    public static void onData(byte[] toWrite) {
-        long start = System.currentTimeMillis();
-        float[] data = new float[toWrite.length / 4];
-        IntBuffer d = ByteBuffer.wrap(toWrite).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer();
-        for (int i = 0; i < data.length; i++) {
-            data[i] = ((float) d.get()) / Integer.MAX_VALUE;
-        }
-        /* float minValue = data[0];
-                        int minPos = 0;
-                        for (int i = 1; i < data.length; i++) {
-                            if (data[i] < minValue) {
-                                minValue = data[i];
-                                minPos = i;
-                            }
-                        }
-                        float[] n = new float[data.length];
-                        for (int i = 0; i < data.length; i++) {
-                            if (i < minPos) {
-                                n[i - minPos + n.length] = data[i];
-                            } else {
-                                n[i - minPos] = data[i];
-                            }
-                        }
-                        data = n;*/
-        if (dofft) {
-            Complex[] input = new Complex[data.length];
-            for (int i = 0; i < input.length; i++) {
-                input[i] = new Complex(data[i], 0);
-            }
-            fft = FFT.fft(input);
-        }
-        mostRecentSample = data;
-        if (M != null) {
-            M.repaint();
-        }
-        //System.out.println(System.currentTimeMillis() - start);
-    }
+    static AudioCache cache = new AudioCache();
 
 }
