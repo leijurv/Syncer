@@ -202,11 +202,11 @@ public class GUI {
                 temp += "\n";
                 temp += ("Cutting: " + aboveLong);
                 temp += "\n";
-                temp += "Offset from multiplexed time: " + offset;
+                temp += "Offset between multiplex and began write to sox subprocess: " + offset;
                 temp += "\n";
-                temp += "Offset betweed multiplex and receive: " + offset2;
+                temp += "Offset between multiplex and receive: " + offset2;
                 temp += "\n";
-                temp += "Offset betweed multiplex and fully received: " + offset3;
+                temp += "Offset between multiplex and fully received: " + offset3;
                 info = temp;
                 M.repaint();
                 if (aboveLong) {
