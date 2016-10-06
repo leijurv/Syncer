@@ -98,6 +98,7 @@ public class Syncer {
                         offset3 = chunk.received - chunk.multiplexed / 1000000;
                         sox.getOutputStream().flush();
                         long wew = System.currentTimeMillis();
+                        lastWrite = wew;
                         offset4 = wew - lad;
                         offset5 = wew - chunk.multiplexed / 1000000;
                         //System.out.println("wew");
@@ -173,6 +174,12 @@ public class Syncer {
                         System.exit(1);
                     }
                 }
+                long dank = System.currentTimeMillis() - lastWrite;
+                if (dank > 20000 && dank < 50000) {
+                    System.out.println("Haven't written in 20s, something's wrong");
+                    Thread.sleep(500);
+                    System.exit(1);
+                }
                 /*if (verbose) {
                     System.out.println(temp);
                 }*/
@@ -186,6 +193,7 @@ public class Syncer {
     static long offset3;
     static long offset4;
     static long offset5;
+    static long lastWrite;
     static AudioCache cache = new AudioCache();
 
 }
