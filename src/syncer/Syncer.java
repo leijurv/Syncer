@@ -176,8 +176,8 @@ public class Syncer {
                     }
                 }
                 long dank = System.currentTimeMillis() - lastWrite;
-                if (dank > 20000 && dank < 50000) {
-                    System.out.println("Haven't written in 20s, something's wrong");
+                if (dank > 5000 && dank < 50000) {
+                    System.out.println("Haven't written in 5s, something's wrong");
                     Thread.sleep(500);
                     System.exit(1);
                 }
