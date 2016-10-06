@@ -48,7 +48,7 @@ public class Syncer {
         boolean verbose = args.length > 0 && args[0].equals("verbose");
         new CacheSource(new DataInputStream(in), cache).start();
         cache.sleepUntilSize(20);
-        Process sox = new ProcessBuilder("/usr/local/bin/sox -t raw -r 44100 -b32 --buffer 4096 -e signed-integer - -tcoreaudio --buffer 4096".split(" ")).start();
+        Process sox = new ProcessBuilder("/usr/local/bin/sox -t raw -r 44100 -b 16 -c 2 --buffer 4096 -e signed-integer - -tcoreaudio --buffer 4096".split(" ")).start();
         if (verbose) {
             System.out.println("Starting to play");
         }
