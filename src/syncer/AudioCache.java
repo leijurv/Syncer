@@ -33,7 +33,7 @@ public class AudioCache {
         }
     }
 
-    public void addBytes(Chunk bytes) {
+    public void addChunk(Chunk bytes) {
         synchronized (lock) {
             if (beginning == null) {
                 beginning = new LinkedList();
@@ -49,7 +49,15 @@ public class AudioCache {
         }
     }
 
-    public Chunk getBytes() {
+    public Chunk getChunk() {
+        Chunk chunk;
+        do {
+            chunk = getChunk0();
+        } while (chunk == null);
+        return chunk;
+    }
+
+    private Chunk getChunk0() {
         //System.out.println("Getting bytes");
         while (beginning == null) {
             waitMS++;

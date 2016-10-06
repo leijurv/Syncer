@@ -29,7 +29,7 @@ public class CacheSource extends Thread {
         try {
             while (true) {
                 Chunk chunk = new Chunk(in);
-                cache.addBytes(chunk);
+                cache.addChunk(chunk);
             }
         } catch (Exception ex) {
             try {
