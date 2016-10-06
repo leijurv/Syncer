@@ -48,10 +48,15 @@ public class Syncer {
         }
 
         boolean verbose = Arrays.asList(args).contains("verbose");
-        gui = !Arrays.asList(args).contains("nogui");
-        if (gui) {
-
+        boolean noGui = Arrays.asList(args).contains("nogui");
+        boolean yesGui = Arrays.asList(args).contains("gui");
+        if (!noGui && !yesGui) {
             gui = 0 == JOptionPane.showConfirmDialog(null, "Would you a GUI or nah?", "It'll work either way", JOptionPane.YES_NO_OPTION);
+        } else {
+            if (yesGui && noGui) {
+                throw new ArrayIndexOutOfBoundsException("no");
+            }
+            gui = yesGui;
         }
         InputStream in = new Socket("207.47.5.28", 5021).getInputStream();
         new CacheSource(new DataInputStream(in), cache).start();
