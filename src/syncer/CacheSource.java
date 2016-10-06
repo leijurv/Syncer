@@ -26,9 +26,7 @@ public class CacheSource extends Thread {
 
     @Override
     public void run() {
-
         try {
-
             while (true) {
                 Chunk chunk = new Chunk(in);
                 cache.addBytes(chunk);
@@ -42,9 +40,7 @@ public class CacheSource extends Thread {
                 System.exit(1);
             } catch (InterruptedException ex1) {
                 Logger.getLogger(CacheSource.class.getName()).log(Level.SEVERE, null, ex1);
-
             }
-
         }
     }
 }

@@ -83,7 +83,6 @@ public class AudioCache {
     public void sleepUntilSize(int target) throws InterruptedException {
         while (getSize() < 20) {
             Thread.sleep(1);
-
         }
     }
 

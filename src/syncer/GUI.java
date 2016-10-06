@@ -34,6 +34,7 @@ public class GUI {
 
     public static void begin() throws InterruptedException {
         M = new JComponent() {
+            @Override
             public void paintComponent(Graphics g) {
                 g.drawString("Click to toggle FFT", 400, 50);
                 String[] lol = info.split("\n");

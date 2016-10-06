@@ -53,6 +53,7 @@ public class Syncer {
             System.out.println("Starting to play");
         }
         new Thread() {
+            @Override
             public void run() {
                 try {
                     int exitCode = sox.waitFor();
@@ -69,6 +70,7 @@ public class Syncer {
             }
         }.start();
         new Thread() {
+            @Override
             public void run() {
                 try {
                     while (true) {
@@ -83,6 +85,11 @@ public class Syncer {
                     }
                 } catch (IOException ex) {
                     Logger.getLogger(Syncer.class.getName()).log(Level.SEVERE, null, ex);
+                    System.out.println("Wow i'm bad");
+                    System.out.println("Wow i'm bad");
+                    System.out.println("Wow i'm bad");
+                    System.out.println("Wow i'm bad");
+                    System.out.println("Wow i'm bad");
 
                 }
             }
