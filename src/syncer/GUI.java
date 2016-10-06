@@ -218,7 +218,7 @@ public class GUI {
                         //beginning = null;
                     }
                     if (System.currentTimeMillis() - startAbove > 20000) {
-                        System.out.println("Exiting because I'm bad");
+                        System.out.println("Exiting because the cache has been nonzero for more than 20 seconds");
                         Thread.sleep(1000);
                         System.exit(1);
                     }
