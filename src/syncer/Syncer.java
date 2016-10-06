@@ -43,6 +43,7 @@ public class Syncer {
             return;
         }*/
         if (!new File("/usr/local/bin/sox").exists()) {
+            JOptionPane.showInputDialog("You need sox. brew install sox");
             System.out.println("You need sox. brew install sox");
             return;
         }
