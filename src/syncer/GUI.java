@@ -5,10 +5,13 @@
  */
 package syncer;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.geom.Line2D;
 import java.util.ArrayList;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -39,6 +42,7 @@ public class GUI {
             }
 
             public void paintComponent1(Graphics g) {
+                ((Graphics2D) g).setStroke(new BasicStroke(0.01F));
                 g.drawString("Click to toggle FFT", 400, 50);
                 String[] lol = info.split("\n");
                 for (int i = 0; i < lol.length; i++) {
@@ -50,22 +54,43 @@ public class GUI {
                     int y = (int) (bleh[i] * 100 + 300);
                     g.drawRect(x, y, 0, 0);
                 }*/
+
                 synchronized (Syncer.cache.lock) {
                     int size = Syncer.cache.getSize();
                     LinkedList<Chunk> curr = Syncer.cache.beginning;
-                    if (curr != null) {
-                        int width = curr.data.floatVersion.length / 4;
-                        for (int i = 0; i < size; i++) {
-                            int location = size - i - 1;
-                            int xStart = width * location;
-                            if (xStart < M.getWidth()) {
-                                float[] bleh = curr.data.floatVersion;
+
+                    float dotsPerPixel = 4F;
+                    final float visCenter = M.getHeight() / 2F;
+                    final float visSize = M.getHeight() / 5F;
+                    float width = mostRecentSample.length / dotsPerPixel;
+                    float start = 10;
+                    g.setColor(Color.BLUE);
+                    for (int i = -1; i <= 1; i++) {
+                        ((Graphics2D) g).draw(new Line2D.Float(0, visCenter + visSize * i, start, visCenter + visSize * i));
+                    }
+                    g.setColor(Color.BLACK);
+                    for (int i = 0; i <= size; i++) {
+                        int location = size - i;
+                        float xStart = width * location + start;
+                        if (xStart < M.getWidth()) {
+                            float[] bleh = i == size ? mostRecentSample : curr.data.floatVersion;
+                            /*
                                 for (int j = 0; j < bleh.length; j++) {
-                                    int x = j / 4 + xStart;
-                                    int y = (int) (bleh[j] * 100 + 300);
-                                    g.drawRect(x, y, 0, 0);
-                                }
+                                    float x = j / dotsPerPixel + xStart;
+                                    float y = bleh[j] * (M.getHeight() / 5) + M.getHeight() / 2;
+                                    ((Graphics2D) g).draw(new Line2D.Float(x, y, x, y));
+                                    //g.drawRect(x, y, 0, 0);
+                                }*/
+                            for (int j = 0; j < bleh.length - 1; j++) {
+                                float x1 = j / dotsPerPixel + xStart;
+                                float y1 = bleh[j] * visSize + visCenter;
+                                float x2 = (j + 1) / dotsPerPixel + xStart;
+                                float y2 = bleh[j + 1] * visSize + visCenter;
+                                ((Graphics2D) g).draw(new Line2D.Float(x1, y1, x2, y2));
+                                //g.drawRect(x, y, 0, 0);
                             }
+                        }
+                        if (i != size) {
                             curr = curr.next;
                         }
                     }
@@ -224,7 +249,7 @@ public class GUI {
         }
         mostRecentSample = data;
         if (M != null) {
-            M.repaint();
+            //M.repaint();
         }
         //System.out.println(System.currentTimeMillis() - start);
     }

@@ -6,9 +6,6 @@
 package syncer;
 
 import java.io.DataInputStream;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.IntBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static syncer.Syncer.cache;
@@ -32,11 +29,11 @@ public class CacheSource extends Thread {
         try {
             while (true) {
                 Chunk chunk = new Chunk(in);
-                byte[] toWrite = chunk.contents;
-                float[] data = new float[toWrite.length / 4];
-                IntBuffer d = ByteBuffer.wrap(toWrite).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer();
+                float[] data = new float[chunk.contents.length / 4];
                 for (int i = 0; i < data.length; i++) {
-                    data[i] = ((float) d.get()) / Integer.MAX_VALUE;
+                    int position = i * 4;
+                    short here = (short) (((chunk.contents[position + 1] & 0xff) << 8) | (chunk.contents[position] & 0xff));
+                    data[i] = (float) here / (float) Short.MAX_VALUE;
                 }
                 chunk.floatVersion = data;
                 cache.addChunk(chunk);
