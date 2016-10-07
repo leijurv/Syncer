@@ -19,6 +19,7 @@ public class Chunk {
     final long beganToReceive;
     final long received;
     final byte[] contents = new byte[SIZE];
+    float[] floatVersion;
 
     public Chunk(DataInputStream in) throws IOException {
         multiplexed = in.readLong();

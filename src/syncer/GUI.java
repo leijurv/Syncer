@@ -9,9 +9,6 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.IntBuffer;
 import java.util.ArrayList;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -35,20 +32,43 @@ public class GUI {
         M = new JComponent() {
             @Override
             public void paintComponent(Graphics g) {
+                long a = System.currentTimeMillis();
+                paintComponent1(g);
+                long b = System.currentTimeMillis();
+                g.drawString("GUI render time: " + (b - a) + "ms", M.getWidth() - 200, M.getHeight() - 15);
+            }
+
+            public void paintComponent1(Graphics g) {
                 g.drawString("Click to toggle FFT", 400, 50);
                 String[] lol = info.split("\n");
                 for (int i = 0; i < lol.length; i++) {
                     g.drawString(lol[i], 10, 10 + i * 15);
                 }
-                float[] bleh = mostRecentSample;
-                if (bleh == null) {
-                    return;
-                }
                 double secondsInThisSample = (((double) SIZE) / BYTES_PER_SEC);
-                for (int i = 0; i < bleh.length; i++) {
+                /*for (int i = 0; i < bleh.length; i++) {
                     int x = i / 4;
                     int y = (int) (bleh[i] * 100 + 300);
                     g.drawRect(x, y, 0, 0);
+                }*/
+                synchronized (Syncer.cache.lock) {
+                    int size = Syncer.cache.getSize();
+                    LinkedList<Chunk> curr = Syncer.cache.beginning;
+                    if (curr != null) {
+                        int width = curr.data.floatVersion.length / 4;
+                        for (int i = 0; i < size; i++) {
+                            int location = size - i - 1;
+                            int xStart = width * location;
+                            if (xStart < M.getWidth()) {
+                                float[] bleh = curr.data.floatVersion;
+                                for (int j = 0; j < bleh.length; j++) {
+                                    int x = j / 4 + xStart;
+                                    int y = (int) (bleh[j] * 100 + 300);
+                                    g.drawRect(x, y, 0, 0);
+                                }
+                            }
+                            curr = curr.next;
+                        }
+                    }
                 }
                 if (fft == null || !dofft) {
                     return;
@@ -177,13 +197,6 @@ public class GUI {
 
     public static void onData(Chunk chunk) {
 
-        byte[] toWrite = chunk.contents;
-        long start = System.currentTimeMillis();
-        float[] data = new float[toWrite.length / 4];
-        IntBuffer d = ByteBuffer.wrap(toWrite).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer();
-        for (int i = 0; i < data.length; i++) {
-            data[i] = ((float) d.get()) / Integer.MAX_VALUE;
-        }
         /* float minValue = data[0];
                         int minPos = 0;
                         for (int i = 1; i < data.length; i++) {
@@ -201,6 +214,7 @@ public class GUI {
                             }
                         }
                         data = n;*/
+        float[] data = chunk.floatVersion;
         if (dofft) {
             Complex[] input = new Complex[data.length];
             for (int i = 0; i < input.length; i++) {
