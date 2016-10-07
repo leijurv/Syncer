@@ -70,12 +70,23 @@ public class Syncer {
             @Override
             public void run() {
                 try {
-                    int exitCode = sox.waitFor();
-                    System.out.println("SOX EXITED WITH CODE " + exitCode);
                     int j;
-                    while ((j = sox.getErrorStream().read()) >= 0) {
+                    while ((j = sox.getInputStream().read()) >= 0) {
                         System.out.write(j);
                     }
+                } catch (IOException ex) {
+                    Logger.getLogger(Syncer.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }.start();
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    while (sox.getErrorStream().read() >= 0) {//gotta do this beacuse otherwise
+                    }
+                    int exitCode = sox.waitFor();
+                    System.out.println("SOX EXITED WITH CODE " + exitCode);
                     Thread.sleep(1000);
                     System.exit(exitCode);//this is a sketchy way to just make it exit once the sox subprocess stops
                 } catch (InterruptedException | IOException ex) {
