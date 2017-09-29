@@ -32,7 +32,11 @@ public class AudioCache {
             return count;
         }
     }
-
+    public void dupe(){
+        Chunk ch=getChunk();
+        addChunk(ch);
+        addChunk(ch);
+    }
     public void addChunk(Chunk bytes) {
         synchronized (lock) {
             if (beginning == null) {
@@ -89,7 +93,7 @@ public class AudioCache {
     }
 
     public void sleepUntilSize(int target) throws InterruptedException {
-        while (getSize() < 20) {
+        while (getSize() < target) {
             Thread.sleep(1);
         }
     }

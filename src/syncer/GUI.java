@@ -9,15 +9,25 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 import java.awt.geom.Line2D;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JOptionPane;
+import javax.swing.*;
+import java.util.*;
 import java.util.ArrayList;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 import static syncer.Syncer.BYTES_PER_SEC;
 import static syncer.Syncer.SIZE;
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import java.io.*;
+import java.net.*;
 
 /**
  *
@@ -38,6 +48,7 @@ public class GUI {
                 long a = System.currentTimeMillis();
                 paintComponent1(g);
                 long b = System.currentTimeMillis();
+                g.setColor(Color.BLACK);
                 g.drawString("GUI render time: " + (b - a) + "ms", M.getWidth() - 200, M.getHeight() - 15);
             }
 
@@ -48,6 +59,93 @@ public class GUI {
                 for (int i = 0; i < lol.length; i++) {
                     g.drawString(lol[i], 10, 10 + i * 15);
                 }
+
+                {
+                    int curpos=Syncer.indexInRoll;
+                    int ind0=((curpos-1)+Syncer.rollingAvg.length)%Syncer.rollingAvg.length;
+                    float currSec=Syncer.rollingAvg[ind0];
+                float sum=0;
+                float sum2=0;
+                {
+                float[] rollingAvg=Syncer.rollingAvg;
+               
+                    for (int i=0; i<rollingAvg.length; i++){
+                        sum+=rollingAvg[i];
+                    }
+                    sum/=rollingAvg.length;
+              
+                    sum2=rollingAvg[0];
+                    for (int i=0; i<rollingAvg.length; i++){
+                        if(rollingAvg[i]>sum2){
+                            sum2=rollingAvg[i];
+                        }
+                    }
+                }
+                if (Syncer.avg){
+                    float tmp=sum;
+                    sum=sum2;
+                    sum2=tmp;
+                }
+
+                int cx=M.getWidth()/2;
+                float mul=600;
+                float memelord=(Syncer.maxcache+Syncer.mincache)/2;
+                g.setColor(Color.BLACK);
+                for (int i=-1; i<=1; i++){
+                    float lm=memelord+i*0.25F;
+                    int xxxxx=(int)(cx+(lm-memelord)*mul);
+                    g.drawLine(xxxxx,0,xxxxx,40);
+                    g.drawString(lm+"",xxxxx,50);
+                }
+
+                g.drawLine((int)(cx+(Syncer.maxcache-memelord)*mul),0,(int)(cx+(Syncer.maxcache-memelord)*mul),30);
+                g.drawLine((int)(cx+(Syncer.mincache-memelord)*mul),0,(int)(cx+(Syncer.mincache-memelord)*mul),30);
+                g.setColor(Color.BLUE);
+                int zer=(int)(cx+(0-memelord)*mul);
+                g.drawLine(zer,0,zer,30);
+                g.drawString("0",zer,40);
+                if (!Syncer.fullroll){
+                    g.setColor(Color.RED);
+                }else{
+                    g.setColor(Color.BLACK);
+                }
+                int xxxxx=(int)(cx+(sum-memelord)*mul);
+                g.drawLine(xxxxx,0,xxxxx,60);
+                g.drawString(sum+"",xxxxx,70);
+
+                int xxxxxx=(int)(cx+(sum2-memelord)*mul);
+                g.drawLine(xxxxxx,0,xxxxxx,80);
+                g.drawString(sum2+"",xxxxxx,90);
+
+                int vomit=20;
+
+                g.drawLine((int)(cx+(currSec-memelord)*mul),0,(int)(cx+(currSec-memelord)*mul),vomit);
+
+                
+                g.setColor(Color.GREEN);
+                //float mult=300;
+                //float prevY=-1;
+                //int xof=M.getWidth()/2;
+                //float mult2=1.0F;
+                
+                float prevX=-1;
+                for (int i=1; i<=Syncer.rollingAvg.length; i++){
+                    int ind=((curpos-i)+Syncer.rollingAvg.length)%Syncer.rollingAvg.length;
+                    float x=cx+(Syncer.rollingAvg[ind]-memelord)*mul;
+                    if (prevX!=-1){
+                        g.drawLine((int)prevX,i-1+vomit,(int)x,i+vomit);
+                    }
+                    prevX=x;
+                    /*float y=M.getHeight()-mult*Syncer.rollingAvg[i];if (prevY!=-1)
+                    g.drawLine((int)(xof+(i-1)*mult2),(int)prevY,(int)(xof+i*mult2),(int)y);
+                    prevY=y;*/
+                }
+
+            }
+            {
+                
+            }
+
                 double secondsInThisSample = (((double) SIZE) / BYTES_PER_SEC);
                 /*for (int i = 0; i < bleh.length; i++) {
                     int x = i / 4;
@@ -63,12 +161,13 @@ public class GUI {
                     final float visCenter = M.getHeight() / 2F;
                     final float visSize = M.getHeight() / 5F;
                     float width = mostRecentSample.length / dotsPerPixel;
-                    float start = 10;
+                       float start = 20;
                     g.setColor(Color.BLUE);
-                    for (int i = -1; i <= 1; i++) {
-                        ((Graphics2D) g).draw(new Line2D.Float(0, visCenter + visSize * i, start, visCenter + visSize * i));
-                    }
+                   
                     g.setColor(Color.BLACK);
+
+                    float maxRenderedY=-1;
+                    float minRenderedY=-1;
                     for (int i = 0; i <= size; i++) {
                         int location = size - i;
                         float xStart = width * location + start;
@@ -81,19 +180,38 @@ public class GUI {
                                     ((Graphics2D) g).draw(new Line2D.Float(x, y, x, y));
                                     //g.drawRect(x, y, 0, 0);
                                 }*/
+                                  float sumthing = 0;
                             for (int j = 0; j < bleh.length - 1; j++) {
                                 float x1 = j / dotsPerPixel + xStart;
                                 float y1 = bleh[j] * visSize + visCenter;
                                 float x2 = (j + 1) / dotsPerPixel + xStart;
                                 float y2 = bleh[j + 1] * visSize + visCenter;
+                                if (y1<minRenderedY || minRenderedY==-1){
+                                    minRenderedY=y1;
+                                }
+                                if (y1>maxRenderedY || maxRenderedY==-1){
+                                    maxRenderedY=y1;
+                                }
                                 ((Graphics2D) g).draw(new Line2D.Float(x1, y1, x2, y2));
                                 //g.drawRect(x, y, 0, 0);
+                                sumthing += bleh[j];
                             }
-                        }
+                            float avg = sumthing / bleh.length;
+                            if (location == 0) {
+                             ((Graphics2D) g).draw(new Line2D.Float(20, avg*100, 420, avg*100));
+                            }                        }
                         if (i != size) {
                             curr = curr.next;
                         }
                     }
+                    g.setColor(Color.BLUE);
+                     for (int i = -1; i <= 1; i++) {
+                        ((Graphics2D) g).draw(new Line2D.Float(0, visCenter + visSize * i, start, visCenter + visSize * i));
+                    }
+                        ((Graphics2D) g).draw(new Line2D.Float(0, minRenderedY, start*3, minRenderedY));
+                        ((Graphics2D) g).draw(new Line2D.Float(0, maxRenderedY, start*3, maxRenderedY));
+
+                    
                 }
                 if (fft == null || !dofft) {
                     return;
@@ -184,12 +302,83 @@ public class GUI {
                 //g.drawString(fft.length + " " + pos + " " + max + "", 100, 100);
             }
         };
+        JSlider volumeBoost = new JSlider(JSlider.VERTICAL, 0, 2, 1);
+        volumeBoost.setPaintLabels(true);
+        
+        class SliderListener implements ChangeListener {
+        public void stateChanged(ChangeEvent e) {
+            JSlider source = (JSlider)e.getSource();
+            if (!source.getValueIsAdjusting()) {
+               System.out.println(source.getValue());
+                
+            }    
+        }
+    }
+        volumeBoost.addChangeListener(new SliderListener());
         JFrame frame = new JFrame("Spotify");
         frame.setContentPane(M);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         //frame.setSize(500, 200);
         frame.setSize(10000, 10000);
         frame.setVisible(true);
+        frame.addKeyListener(new KeyListener(){
+              public void keyTyped(KeyEvent e) {
+        System.out.println("Typed"+e.getKeyChar());
+        if(e.getKeyChar()=='d'){
+            System.out.println("DUPING");
+            new Thread(){
+                        public void run(){
+                            Syncer.cache.dupe();
+                        }
+                    }.start();
+        }
+        if (e.getKeyChar()=='c'){
+            System.out.println("CUTTING");
+             synchronized (Syncer.cache.lock) {
+                if (Syncer.cache.beginning!=null)
+                Syncer.cache.beginning = Syncer.cache.beginning.next;
+            }
+        }
+         if (e.getKeyChar()=='h'){
+            System.out.println("CUTTING HALF");
+             synchronized (Syncer.cache.lock) {
+                if (Syncer.cache.beginning!=null)
+                Syncer.cache.beginning.data.len-=512;
+            }
+        }
+        if (e.getKeyChar()=='p'){
+            new Thread(){
+                public void run(){
+                    String pl=""+JOptionPane.showInputDialog("What would you like to play?");
+                     try {
+                        if(pl.equals("null") ||pl.equals("")){
+                            return;
+                        }
+                    Socket querySocket = new Socket(Syncer.ip, 5023);
+                    DataOutputStream outToServer = new DataOutputStream(querySocket.getOutputStream());
+                 
+                    outToServer.writeBytes(pl + '\n');
+                    
+                    querySocket.close();
+                    
+                } catch (Exception e) {
+                    Logger.getLogger(Syncer.class.getName()).log(Level.SEVERE, null, e);
+                }
+                }
+            }.start();
+            
+        }
+
+    }
+
+    /** Handle the key-pressed event from the text field. */
+    public void keyPressed(KeyEvent e) {
+    }
+
+    /** Handle the key-released event from the text field. */
+    public void keyReleased(KeyEvent e) {
+    }
+});
         frame.addMouseListener(new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -254,3 +443,4 @@ public class GUI {
         //System.out.println(System.currentTimeMillis() - start);
     }
 }
+

@@ -18,6 +18,7 @@ public class Chunk {
     final long multiplexed;
     final long beganToReceive;
     final long received;
+    int len=SIZE;
     final byte[] contents = new byte[SIZE];
     float[] floatVersion;
 
