@@ -14,6 +14,7 @@ import java.awt.geom.Line2D;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
+import javax.sound.sampled.*;
 import javax.swing.*;
 import java.util.*;
 import java.util.ArrayList;
@@ -39,12 +40,17 @@ public class GUI {
     static Complex[] fft = null;
     static JComponent M;
     public static String info = "";
-    static boolean dofft = false;
+    static boolean rec=false;
+    static int dofft = 1;
 
     public static void begin() throws InterruptedException {
         M = new JComponent() {
             @Override
             public void paintComponent(Graphics g) {
+                if (rec){
+                    g.setColor(Color.RED);
+                    g.drawOval(0,0,M.getWidth(),M.getHeight());
+                }
                 long a = System.currentTimeMillis();
                 paintComponent1(g);
                 long b = System.currentTimeMillis();
@@ -53,6 +59,7 @@ public class GUI {
             }
 
             public void paintComponent1(Graphics g) {
+                g.setColor(Color.BLACK);
                 ((Graphics2D) g).setStroke(new BasicStroke(0.01F));
                 g.drawString("Click to toggle FFT", 400, 50);
                 String[] lol = info.split("\n");
@@ -145,7 +152,9 @@ public class GUI {
             {
                 
             }
-
+            if(dofft%3==0){
+                return;
+            }
                 double secondsInThisSample = (((double) SIZE) / BYTES_PER_SEC);
                 /*for (int i = 0; i < bleh.length; i++) {
                     int x = i / 4;
@@ -168,9 +177,21 @@ public class GUI {
 
                     float maxRenderedY=-1;
                     float minRenderedY=-1;
+                    float offset=0;
+                    int rng=400;
+                    o:
+                    for(int i=0; i<mostRecentSample.length; i++){
+                        for(int j=i-rng; j<=i+rng; j++){
+                            if(j>=0 && j<mostRecentSample.length && mostRecentSample[j]>mostRecentSample[i]){
+                                continue o;
+                            }
+                        }
+                        offset=i;
+                        break;
+                    }
                     for (int i = 0; i <= size; i++) {
-                        int location = size - i;
-                        float xStart = width * location + start;
+                        float location = size - i+0.5f;
+                        float xStart = width * location + start-offset/dotsPerPixel;
                         if (xStart < M.getWidth()) {
                             float[] bleh = i == size ? mostRecentSample : curr.data.floatVersion;
                             /*
@@ -180,6 +201,8 @@ public class GUI {
                                     ((Graphics2D) g).draw(new Line2D.Float(x, y, x, y));
                                     //g.drawRect(x, y, 0, 0);
                                 }*/
+                                
+
                                   float sumthing = 0;
                             for (int j = 0; j < bleh.length - 1; j++) {
                                 float x1 = j / dotsPerPixel + xStart;
@@ -196,9 +219,13 @@ public class GUI {
                                 //g.drawRect(x, y, 0, 0);
                                 sumthing += bleh[j];
                             }
+                            if(i==size){
+                                g.setColor(Color.BLUE);
+                                   ((Graphics2D) g).draw(new Line2D.Float(offset/dotsPerPixel+xStart, minRenderedY, offset/dotsPerPixel+xStart, maxRenderedY));
+                                }
                             float avg = sumthing / bleh.length;
                             if (location == 0) {
-                             ((Graphics2D) g).draw(new Line2D.Float(20, avg*100, 420, avg*100));
+                             //((Graphics2D) g).draw(new Line2D.Float(20, avg*100, 420, avg*100));
                             }                        }
                         if (i != size) {
                             curr = curr.next;
@@ -213,7 +240,7 @@ public class GUI {
 
                     
                 }
-                if (fft == null || !dofft) {
+                if (fft == null || dofft%3<2) {
                     return;
                 }
                 g.setColor(Color.RED);
@@ -227,10 +254,10 @@ public class GUI {
                     }
                     int y = (int) (-fft[i].re() * 10 + M.getHeight() - 120);
                     //int othery = (int) (fft[i].re() * 100 + M.getHeight() - 120);
-                    //g.drawLine(x, y, x, othery);
                     g.drawLine(x, y, x, y);
+                    g.drawRect(x, y, 1, y);
                 }
-                int blocksize = 10;
+                int blocksize = 100;
                 for (int block = 0; block + blocksize < fft.length; block += blocksize) {
                     double sum = 0;
                     for (int i = block; i < block + blocksize; i++) {
@@ -315,7 +342,8 @@ public class GUI {
         }
     }
         volumeBoost.addChangeListener(new SliderListener());
-        JFrame frame = new JFrame("Spotify");
+        final JFileChooser fc = new JFileChooser();
+        JFrame frame = new JFrame("Syncer");
         frame.setContentPane(M);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         //frame.setSize(500, 200);
@@ -349,7 +377,7 @@ public class GUI {
         if (e.getKeyChar()=='p'){
             new Thread(){
                 public void run(){
-                    String pl=""+JOptionPane.showInputDialog("What would you like to play?");
+                    String pl=""+JOptionPane.showInputDialog("What would you like to play? (first youtube search result will be played)");
                      try {
                         if(pl.equals("null") ||pl.equals("")){
                             return;
@@ -368,6 +396,40 @@ public class GUI {
             }.start();
             
         }
+        if(e.getKeyChar()=='f'){
+
+             int returnVal = fc.showOpenDialog(frame);
+
+            if (returnVal == JFileChooser.APPROVE_OPTION) {
+                File file = fc.getSelectedFile();
+                new Thread(){
+                    public void run(){
+                        try{
+                            Socket xd=new Socket(Syncer.ip,5022);
+                        FileInputStream in=new FileInputStream(file);
+                        byte[] memer=new byte[65536];
+                        int j=in.read(memer);
+                        while(j>=0){
+                            xd.getOutputStream().write(memer,0,j);
+                            j=in.read(memer);
+                        }
+                        xd.close();
+                        in.close();
+                    }catch(Exception e){
+                         Logger.getLogger(Syncer.class.getName()).log(Level.SEVERE, null, e);
+                    }
+                    }
+                }.start();
+            }
+        }
+        if (e.getKeyChar()==' '){
+           /* try{
+            Thread.sleep(500);
+             }catch(Exception ee){
+                         Logger.getLogger(Syncer.class.getName()).log(Level.SEVERE, null, ee);
+                    }*/
+            rec=!rec;
+        }
 
     }
 
@@ -379,10 +441,49 @@ public class GUI {
     public void keyReleased(KeyEvent e) {
     }
 });
+        new Thread(){
+            public void run(){
+                try{
+                    while(true){
+                        if(!rec){
+                            Thread.sleep(5);
+                            continue;
+                        }
+                        Socket s=new Socket(Syncer.ip,5024);
+                        final AudioFormat af=new AudioFormat(44100,16,2,true,false);
+            TargetDataLine line;
+            DataLine.Info info=new DataLine.Info(TargetDataLine.class,af);
+          
+            line=(TargetDataLine) AudioSystem.getLine(info);
+            line.open(af);
+            line.start();
+            int j;
+            byte[] d=new byte[16384];
+            OutputStream o=s.getOutputStream();
+            int c=20;
+            while (true){
+                j=line.read(d,0,d.length);
+                o.write(d,0,j);
+                if (!rec){
+                    c--;
+                    if (c<0){
+                        break;
+                    }
+                }
+            }
+            line.close();s.close();
+
+
+                    }
+                    }catch(Exception e){
+                         Logger.getLogger(Syncer.class.getName()).log(Level.SEVERE, null, e);
+                    }
+            }
+        }.start();
         frame.addMouseListener(new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                dofft = !dofft;
+                dofft ++;
                 //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
             }
 
@@ -429,7 +530,7 @@ public class GUI {
                         }
                         data = n;*/
         float[] data = chunk.floatVersion;
-        if (dofft) {
+        if (dofft%3>1) {
             Complex[] input = new Complex[data.length];
             for (int i = 0; i < input.length; i++) {
                 input[i] = new Complex(data[i], 0);

@@ -68,6 +68,7 @@ public class Syncer {
         boolean verbose = Arrays.asList(args).contains("verbose");
         boolean noGui = Arrays.asList(args).contains("nogui");
         boolean yesGui = Arrays.asList(args).contains("gui");
+        yesGui=true;
         boolean customIP = Arrays.asList(args).contains("ip");
         boolean dontcut = Arrays.asList(args).contains("nocut");
         if (!noGui && !yesGui) {
@@ -154,7 +155,7 @@ public class Syncer {
                         offset = lad - chunk.multiplexed / 1000000;
                         offset2 = chunk.beganToReceive - chunk.multiplexed / 1000000;
                         offset3 = chunk.received - chunk.multiplexed / 1000000;
-                        linee.write(chunk.contents,0,chunk.len);
+                        linee.write(GUI.rec?new byte[chunk.contents.length]:chunk.contents,0,chunk.len);
                         //sox.getOutputStream().flush();
                        
                         long wew = System.currentTimeMillis();
@@ -221,7 +222,7 @@ public class Syncer {
                 try{
                      while (true ){
 
-
+                        if (GUI.dofft%3!=0)
                 GUI.M.repaint();
                 Thread.sleep(17);
             }
@@ -310,19 +311,21 @@ public class Syncer {
             }
                 temp += ("ms since zero cache: " + (size > 1 ? (System.currentTimeMillis() - startAbove) : 0));
                 temp += "\n";
-                temp += ("Cutting: " + aboveLong);
-                temp += "\n";
+               //temp += ("Cutting: " + aboveLong);
+                //temp += "\n";
                 temp += "Offset between server multiplex time and receive: " + offset2;
                 temp += "\n";
-                temp += "Offset between server multiplex time and fully received: " + offset3;
-                temp += "\n";
+                //temp += "Offset between server multiplex time and fully received: " + offset3;
+                //temp += "\n";
                 temp += "Subprocess flush time: " + offset4;
                 temp += "\n";
-                temp += "Offset between server multiplex time and end write to sox subprocess: " + offset5;
+                /*temp += "Offset between server multiplex time and end write to sox subprocess: " + offset5;
                 temp += "\n";
                 temp += "Offset between server multiplex time and began write to sox subprocess: " + offset;
-                temp += "\n";
+                temp += "\n";*/
                 temp += "Currently playing: " + currentlyPlaying;
+                temp += "\n";
+                temp += "Hit p to search for a song on youtube";
                 if (gui && GUI.M != null) {
                     GUI.info = temp;
                     GUI.M.repaint();

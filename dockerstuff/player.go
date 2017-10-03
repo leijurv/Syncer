@@ -28,27 +28,42 @@ func main() {
 	qch = make(chan *QueueItem, 1)
 	go consumeQueue()
 	go urlServer()
+	go liveServer()
 	pcmServer()
 }
-
-func pcmServer() {
-	ln, err := net.Listen("tcp", ":5022")
+func liveServer(){
+	ln, err := net.Listen("tcp", ":5024")
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("PCM player is listening on 5022")
+	fmt.Println("PCM live player is listening on 5024")
 	for {
 		connection, err := ln.Accept()
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("WAV player got connection", connection)
+		fmt.Println("PCM live player got connection", connection)
+		go directlyPlayPCMLive(connection)
+	}
+}
+func pcmServer() {
+	ln, err := net.Listen("tcp", ":5022")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("audio player is listening on 5022")
+	for {
+		connection, err := ln.Accept()
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println("audio player got connection", connection)
 		go func() {
 			connection.Write([]byte("starting to receive...\n"))
 			fmt.Println("hello?")
 			aoeu, err := ioutil.ReadAll(connection)
 			if err != nil {
-				panic(err)
+				//panic(err)
 			}
 			connection.Write([]byte("ok got it. added to queue.\n"))
 			connection.Close()
@@ -216,6 +231,43 @@ func playAndWait(qi *QueueItem) {
 	if err == nil {
 		syscall.Kill(-pgid, 15) // note the minus sign
 	}
+}
+func directlyPlayPCMLive(conn net.Conn) {
+	doneChan := make(chan int, 1)
+
+	cmd := exec.Command("pacat")
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true} //this is needed because stack overflow says so
+
+	in, err := cmd.StdinPipe()
+	if err != nil {
+		panic(err)
+	}
+	copyAndNotifyWhenDone(in, conn, doneChan)
+
+	out, err := cmd.StdoutPipe()
+	if err != nil {
+		panic(err)
+	}
+	copyAndNotifyWhenDone(conn, out, doneChan)
+
+	err = cmd.Start()
+	if err != nil {
+		panic(err)
+	}
+
+	go func() {
+		<-doneChan
+		conn.Close()                                  //when we are done (for any reason), both close the connection
+		pgid, err := syscall.Getpgid(cmd.Process.Pid) //and kill the process
+		if err == nil {
+			syscall.Kill(-pgid, 15) // note the minus sign
+		}
+	}()
+
+	cmd.Wait()
+	doneChan <- 1
+
+	fmt.Println("Main func over")
 }
 func copyAndNotifyWhenDone(dst io.Writer, src io.Reader, doneChan chan int) {
 	go func() {
