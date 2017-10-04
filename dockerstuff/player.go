@@ -30,6 +30,24 @@ var voteskips []string
 var onlines =make(map[string]int64)
 var current *QueueItem
 
+var dedup=make(map[string]int64)
+var dl sync.Mutex
+
+func canplay(name string)bool{
+	dl.Lock()
+	defer dl.Unlock()
+	lastUsed,ok:=dedup[name]
+	if !ok{
+		dedup[name]=time.Now().UnixNano()
+		return true // if no entry, it's ok
+	}
+	if lastUsed<time.Now().UnixNano()-int64(5*time.Minute){
+		dedup[name]=time.Now().UnixNano()
+		return true // if more than 5mins old, it's ok
+	}
+	return false
+}
+
 func main() {
 	qch = make(chan *QueueItem, 1000)
 	go consumeQueue()
@@ -143,11 +161,21 @@ func urlServer() {
 				connection.Close()
 				return
 			}
+			if text=="current" || text=="skip"{
+				connection.Write([]byte("your client is outdated.\n\n"))
+				connection.Close()
+				return
+			}
 			urlRe := regexp.MustCompile(`https?://*.*`)
 			dlUrl := text
 			if !urlRe.MatchString(text) {
 				// search for string
 				dlUrl = "ytsearch:" + text
+			}
+			if !canplay(dlUrl){
+				fmt.Println("DEDUP",dlUrl)
+				connection.Write([]byte("this was already played\n"))
+				return
 			}
 			fmt.Println("downloading", dlUrl)
 			nameCmd := exec.Command("youtube-dl", "--get-filename", "-o", "%(title)s", dlUrl)
@@ -162,6 +190,11 @@ func urlServer() {
 				connection.Write([]byte("Error downloading " + text + "\n"))
 				connection.Close()
 				fmt.Println(err, stderr)
+				return
+			}
+			if !canplay(name){
+				fmt.Println("DEDUPNAME",name)
+				connection.Write([]byte("this was already played.\n"))
 				return
 			}
 			connection.Write([]byte("Downloading " + string(name) + "...\n"))
