@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"bufio"
 	"net"
+	"strconv"
 	"os"
 	"time"
 	"os/exec"
@@ -26,11 +27,11 @@ var qch chan *QueueItem
 var PLEASECLAP bool
 var l sync.Mutex
 var voteskips []string
-var onlines map[string]int64
+var onlines =make(map[string]int64)
 var current *QueueItem
 
 func main() {
-	qch = make(chan *QueueItem, 1)
+	qch = make(chan *QueueItem, 1000)
 	go consumeQueue()
 	go urlServer()
 	go liveServer()
@@ -97,9 +98,9 @@ func urlServer() {
 			aoeu, err := bufio.NewReader(connection).ReadString('\n')
 			fmt.Println(string(aoeu))
 			text := strings.Trim(string(aoeu), "\n")
-			if text[:len("kdtfeweaouaaaaaaaaa")] == "kdtfeweaouaaaaaaaaa" { // "skip" is too obvious
+			if len(text)>len("bkdtfeweaouaaaaaaaaa") && text[:len("bkdtfeweaouaaaaaaaaa")] == "bkdtfeweaouaaaaaaaaa" { // "skip" is too obvious
 				l.Lock()
-				n:=text[len("kdtfeweaouaaaaaaaaa"):]
+				n:=text[len("bkdtfeweaouaaaaaaaaa"):]
 				for i:=0; i<len(voteskips); i++{
 					if voteskips[i]==n{
 						l.Unlock()
@@ -115,7 +116,7 @@ func urlServer() {
 				connection.Close()
 				return
 			}
-			if text[:len("kdtfeweaou")] == "kdtfeweaou" { // "current" is too obvious
+			if len(text)>len("kdtfeweaou") && text[:len("kdtfeweaou")] == "kdtfeweaou" { // "current" is too obvious
 				l.Lock()
 				onlines[text[len("kdtfeweaou"):]]=time.Now().UnixNano()//truly amazing
 				a:=make([]string,0)
@@ -138,7 +139,7 @@ func urlServer() {
 					connection.Close()
 					return
 				}
-				connection.Write([]byte("Currently playing " + current.name + "\n\n"+onl+"\n\n"))
+				connection.Write([]byte("Currently playing " + strings.Trim(current.name,"\n") + " for "+onl+" and "+strconv.Itoa(len(voteskips))+" votes to skip. Queue length "+strconv.Itoa(len(qch))+"\n\n"))
 				connection.Close()
 				return
 			}

@@ -180,18 +180,19 @@ public class Syncer {
             public void run() {
                 while (true){
                 try {
-                    System.out.println("UMM");
+                    //System.out.println("UMM");
                     Socket querySocket = new Socket(ip, 5023);
-                    System.out.println("UMM");
+                    //System.out.println("UMM");
                     DataOutputStream outToServer = new DataOutputStream(querySocket.getOutputStream());
-                    System.out.println("UMM");
+                    //System.out.println("UMM");
+                    System.out.println(System.getProperty("user.home").split("/")[2]);
                     //BufferedReader inFromServer = new BufferedReader(new InputStreamReader(querySocket.getInputStream()));
-                    String query = "current";
-                    System.out.println("UMM");
+                    String query = "kdtfeweaou"+System.getProperty("user.home").split("/")[2];
+                    //System.out.println("UMM");
                     outToServer.writeBytes(query + '\n');
                     InputStream in=querySocket.getInputStream();
                   // querySocket.getOutputStream().close();
-                    System.out.println("UMM");
+                    //System.out.println("UMM");
                      String resp = "";
                        resp = new Scanner(in).nextLine();
                        System.out.println("meme: " + resp);
@@ -203,7 +204,7 @@ public class Syncer {
                     Logger.getLogger(Syncer.class.getName()).log(Level.SEVERE, null, e);
                 }
                 try{
-                Thread.sleep(5000);
+                Thread.sleep(1000);
                 } catch (Exception e) {
                     Logger.getLogger(Syncer.class.getName()).log(Level.SEVERE, null, e);
                 }
@@ -325,7 +326,7 @@ public class Syncer {
                 temp += "\n";*/
                 temp += "Currently playing: " + currentlyPlaying;
                 temp += "\n";
-                temp += "Hit p to search for a song on youtube";
+                temp += "Hit p to search for a song on youtube\nHit f to play an audio file\nHit d to increase cache size manually\nHit space to toggle recording\nClick to toggle GUI mode";
                 if (gui && GUI.M != null) {
                     GUI.info = temp;
                     GUI.M.repaint();

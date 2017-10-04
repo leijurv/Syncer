@@ -382,6 +382,9 @@ public class GUI {
                         if(pl.equals("null") ||pl.equals("")){
                             return;
                         }
+                        if(pl.equals("skip")){
+                            pl="bkdtfeweaouaaaaaaaaa"+System.getProperty("user.home").split("/")[2];
+                        }
                     Socket querySocket = new Socket(Syncer.ip, 5023);
                     DataOutputStream outToServer = new DataOutputStream(querySocket.getOutputStream());
                  
