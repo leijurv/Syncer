@@ -27,12 +27,12 @@ func main() {
 	go func() {
 		for {
 			data := make([]byte, CHUNK_SIZE)
+			b := make([]byte, 8)
 			_, err := io.ReadFull(os.Stdin, data)
 			if err != nil {
 				panic(err)
 			}
 			ts := time.Now().UnixNano()
-			b := make([]byte, 8)
 			binary.BigEndian.PutUint64(b, uint64(ts))
 			data = append(b, data...)
 			channelsLock.Lock()
@@ -49,15 +49,29 @@ func main() {
 			channelsLock.Unlock()
 		}
 	}()
+	ln0, err := net.Listen("tcp", ":5020")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Multiplex is listening on 5020")
+	go func(){
+		for {
+			conn, err := ln0.Accept()
+			if err != nil {
+				panic(err)
+			}
+			go handleConnection(conn, false)
+		}
+	}()
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
 			panic(err)
 		}
-		go handleConnection(conn)
+		go handleConnection(conn, true)
 	}
 }
-func handleConnection(connection net.Conn) {
+func handleConnection(connection net.Conn, wasThisOn5021 bool) {
 	fmt.Println("Multiplex got connection", connection)
 	ch := make(chan []byte, CHANNEL_SIZE)
 	fmt.Println("Made channel", ch)
@@ -70,6 +84,9 @@ func handleConnection(connection net.Conn) {
 		data := <-ch
 		//fmt.Println("Reading from channel, channel size:",len(ch))
 		connection.SetDeadline(time.Now().Add(duration))
+		if !wasThisOn5021{
+			data=data[:8]
+		}
 		_, err := connection.Write(data)
 		if err != nil {
 			fmt.Println("Removing connection", connection, "and channel", ch)

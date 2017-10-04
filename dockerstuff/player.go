@@ -8,9 +8,11 @@ import (
 	"bufio"
 	"net"
 	"os"
+	"time"
 	"os/exec"
 	"regexp"
 	"strings"
+	"sync"
 	"syscall"
 )
 
@@ -22,6 +24,9 @@ type QueueItem struct {
 var qch chan *QueueItem
 
 var PLEASECLAP bool
+var l sync.Mutex
+var voteskips []string
+var onlines map[string]int64
 var current *QueueItem
 
 func main() {
@@ -92,18 +97,48 @@ func urlServer() {
 			aoeu, err := bufio.NewReader(connection).ReadString('\n')
 			fmt.Println(string(aoeu))
 			text := strings.Trim(string(aoeu), "\n")
-			if text == "skip" {
-				PLEASECLAP = true
+			if text[:len("kdtfeweaouaaaaaaaaa")] == "kdtfeweaouaaaaaaaaa" { // "skip" is too obvious
+				l.Lock()
+				n:=text[len("kdtfeweaouaaaaaaaaa"):]
+				for i:=0; i<len(voteskips); i++{
+					if voteskips[i]==n{
+						l.Unlock()
+						connection.Close()
+						return
+					}
+				}
+				voteskips=append(voteskips,n)
+				if 2*len(voteskips)>=len(onlines){
+					PLEASECLAP=true
+				}
+				l.Unlock()
 				connection.Close()
 				return
 			}
-			if text == "current" {
+			if text[:len("kdtfeweaou")] == "kdtfeweaou" { // "current" is too obvious
+				l.Lock()
+				onlines[text[len("kdtfeweaou"):]]=time.Now().UnixNano()//truly amazing
+				a:=make([]string,0)
+				for k,_:=range onlines{
+					a=append(a,k)
+				}
+				for _,k:=range a{
+					if onlines[k]<time.Now().UnixNano()-int64(10*time.Second){
+						delete(onlines,k)
+					}
+				}
+				onl:=""
+				for k,_:=range onlines{
+					onl+=k
+					onl+=","
+				}
+				l.Unlock()
 				if current == nil {
 					connection.Write([]byte("Nothing playing\n"))
 					connection.Close()
 					return
 				}
-				connection.Write([]byte("Currently playing " + current.name + "\n\n"))
+				connection.Write([]byte("Currently playing " + current.name + "\n\n"+onl+"\n\n"))
 				connection.Close()
 				return
 			}
@@ -160,6 +195,7 @@ func consumeQueue() {
 		fmt.Println("Len:", len(data.data))
 		playAndWait(data)
 		current=nil
+		voteskips=make([]string,0)
 		fmt.Println("and done")
 	}
 }
